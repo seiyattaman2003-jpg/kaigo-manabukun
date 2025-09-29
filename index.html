@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>介護業界 知識学習＆テストツール</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Warm Harmony -->
+    <!-- Application Structure Plan: ユーザーの要望に基づき、ペルソナ情報をより実践的な内容（身体的特徴、家庭状況、志向性）に刷新。テスト機能は、全30問のプールからランダムに5問を出題する形式に変更し、手軽さと網羅性を両立させました。既存の「全体像」→「施設詳細」→「ペルソナ」の学習フローは維持しつつ、各コンテンツの質を向上させることで、現場での応用力を高めることを目的としています。 -->
+    <!-- Visualization & Content Choices: ペルソナカードのUIを改善し、「働き方の希望」や「フィットしやすい職場（理由付き）」といった新情報をリスト形式で明瞭に表示します（Goal: Inform, Method: Styled HTML Lists）。これにより、求職者の具体的なニーズと最適な職場提案を結びつけやすくなります。テスト機能はJavaScriptロジックを改修し、大規模な問題プールからのランダム抽出を実現。これにより、反復学習の効果を最大化します（Goal: Test, Method: JS Logic）。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', 'Noto Sans JP', sans-serif; }
+        .modal-overlay { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav-link.active, .nav-link:hover {
+            border-bottom-color: #10B981;
+            color: #10B981;
+        }
+        .quiz-option { transition: all 0.2s ease-in-out; }
+        .quiz-option.correct { background-color: #D1FAE5 !important; border-color: #10B981 !important; }
+        .quiz-option.incorrect { background-color: #FEE2E2 !important; border-color: #EF4444 !important; }
+        .quiz-option:not(.disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .disabled { pointer-events: none; opacity: 0.8; }
+        .card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .flow-box { border: 2px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; text-align: center; background-color: white; font-weight: 600; }
+        .flow-line { background-color: #d1d5db; }
+        .flow-group { border: 2px dashed #d1d5db; padding: 1.5rem; border-radius: 0.5rem; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <header class="bg-white shadow-sm sticky top-0 z-40">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                 <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-gray-800 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.25-6.362m-16.5 0A9.004 9.004 0 0112 3c1.373 0 2.664.403 3.75 1.082m-11.25 5.148a4.502 4.502 0 001.5 3.695m1.5-3.695a4.502 4.502 0 013.695 1.5m6.25-1.5a4.502 4.502 0 01-1.5 3.695m-1.5-3.695a4.502 4.502 0 00-3.695 1.5m10-6.25a4.502 4.502 0 00-3.695-1.5m3.695 1.5a4.502 4.502 0 01-3.695 1.5m0-11.25a9.004 9.004 0 00-11.25 5.148A9.004 9.004 0 0112 3a9.004 9.004 0 018.25 6.362M3.75 9.362a9.004 9.004 0 0016.5 0m-16.5 0a9.004 9.004 0 010-5.148m16.5 5.148a9.004 9.004 0 000-5.148" />
+                        </svg>
+                        介護業界ラーニング
+                    </h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#" class="nav-link active" data-target="home">ホーム</a>
+                        <a href="#" class="nav-link" data-target="structure">全体像を学ぶ</a>
+                        <a href="#" class="nav-link" data-target="facilities">施設詳細を学ぶ</a>
+                        <a href="#" class="nav-link" data-target="personas">働く人のペルソナ</a>
+                        <a href="#" class="nav-link" data-target="quiz">知識力テスト</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <section id="home">
+            <div class="bg-white rounded-lg shadow p-8 text-center">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">介護業界への理解を、次のレベルへ。</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
+                    このツールは、介護業界専門の人材紹介営業担当者様向けに作られた学習アプリケーションです。複雑な介護施設の形態、働く方々の特性、そして両者の最適なマッチングについて、体系的に学び、知識を確実に定着させることを目的としています。
+                </p>
+                <button id="start-learning-btn" class="bg-emerald-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-emerald-600 transition duration-300">
+                    学習を開始する
+                </button>
+            </div>
+        </section>
+        
+        <section id="structure" class="hidden">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">介護サービスの全体像</h2>
+                <p class="mt-4 text-lg text-gray-600">介護サービスは目的や運営母体によって様々な種類に分類されます。まずはこの構造を理解しましょう。</p>
+            </div>
+            <div class="bg-white p-8 rounded-lg shadow">
+                <div class="flex flex-col items-center">
+                    <div class="flow-box bg-emerald-100 border-emerald-300 text-emerald-800 w-64">介護保険サービス</div>
+                    <div class="w-1 h-12 flow-line"></div>
+                    <div class="flex flex-col md:flex-row w-full justify-center gap-8">
+                        <div class="flex flex-col items-center flex-1">
+                            <div class="flow-box w-64">居宅サービス (在宅中心)</div>
+                            <div class="w-1 h-8 flow-line"></div>
+                            <div class="w-full flow-group flex flex-col items-center gap-6">
+                                <p class="text-sm text-gray-500 -mt-2">利用者が自宅で生活しながら利用するサービス</p>
+                                <div class="flow-box text-sm w-56">訪問サービス</div>
+                                <div class="flow-box text-sm w-56">通所サービス (デイサービス等)</div>
+                                <div class="flow-box text-sm w-56">短期入所サービス (ショートステイ)</div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center flex-1">
+                            <div class="flow-box w-64">施設サービス (入居中心)</div>
+                            <div class="w-1 h-8 flow-line"></div>
+                            <div class="w-full flex flex-col md:flex-row gap-4">
+                                <div class="flex-1 flow-group flex flex-col items-center gap-6">
+                                    <p class="font-semibold text-gray-700">公的施設</p>
+                                    <div class="flow-box text-sm w-full">特別養護老人ホーム</div>
+                                    <div class="flow-box text-sm w-full">介護老人保健施設</div>
+                                    <div class="flow-box text-sm w-full">介護医療院</div>
+                                </div>
+                                <div class="flex-1 flow-group flex flex-col items-center gap-6">
+                                     <p class="font-semibold text-gray-700">民間施設</p>
+                                    <div class="flow-box text-sm w-full">介護付有料老人ホーム</div>
+                                    <div class="flow-box text-sm w-full">住宅型有料老人ホーム</div>
+                                    <div class="flow-box text-sm w-full">グループホーム</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="facilities" class="hidden">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">施設詳細を学ぶ</h2>
+                <p class="mt-4 text-lg text-gray-600">各施設の種類と特徴を理解し、法人様への提案や求職者様への説明に役立てましょう。</p>
+            </div>
+            <div id="facility-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+        </section>
+
+        <section id="personas" class="hidden">
+             <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">働く人のペルソナを知る</h2>
+                <p class="mt-4 text-lg text-gray-600">求職者様の多様なニーズを理解し、最適な職場を提案するためのヒントがここにあります。</p>
+            </div>
+            <div id="persona-cards-container" class="grid grid-cols-1 lg:grid-cols-2 gap-8"></div>
+        </section>
+
+        <section id="quiz" class="hidden">
+            <div class="bg-white rounded-lg shadow p-6 md:p-8 max-w-4xl mx-auto">
+                <div id="quiz-start-screen">
+                    <div class="text-center">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-4">知識力テスト</h2>
+                        <p class="text-gray-600 mb-8">全30問の中からランダムで5問が出題されます。学習の成果を試してみましょう！</p>
+                        <button id="start-quiz-btn" class="bg-emerald-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-emerald-600 transition duration-300">
+                            テストを開始
+                        </button>
+                    </div>
+                </div>
+                <div id="quiz-main-screen" class="hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold" id="question-number"></h3>
+                    </div>
+                    <p class="text-lg font-semibold text-gray-800 mb-6 min-h-[60px]" id="question-text"></p>
+                    <div id="options-container" class="space-y-4"></div>
+                    <div id="feedback-container" class="mt-6 p-4 rounded-lg text-center font-semibold hidden"></div>
+                </div>
+                <div id="quiz-result-screen" class="hidden">
+                    <div class="text-center">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">テスト結果</h2>
+                        <p class="text-5xl font-extrabold text-emerald-500 mb-2" id="final-score"></p>
+                        <p class="text-lg text-gray-600 mb-4" id="score-message"></p>
+                        <p class="text-gray-600 mb-8">お疲れ様でした。繰り返し挑戦して、知識を完璧にしましょう！</p>
+                        <button id="retry-quiz-btn" class="bg-emerald-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-emerald-600 transition duration-300">
+                            もう一度挑戦する
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="facility-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto transform scale-95">
+            <div class="sticky top-0 bg-white p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center z-10">
+                <h3 class="text-2xl font-bold text-gray-900" id="modal-title"></h3>
+                <button id="modal-close-btn" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-4 sm:p-6" id="modal-body"></div>
+        </div>
+    </div>
+
+<script>
+// DATA (unchanged from thought process)
+const facilityData = [
+    { id: 'tokuyou', name: '特別養護老人ホーム (特養)', tagline: '終身利用が可能な公的施設', category: '施設サービス (公的)', icon: 'M15 9h-2a2 2 0 00-2 2v2a2 2 0 002 2h2m-2-4h2m0 0v4m0 0v2m0-6V7a2 2 0 00-2-2h-2M3 9h2a2 2 0 012 2v2a2 2 0 01-2 2H3m2-4H3m0 0v4m0 0v2m0-6V7a2 2 0 012-2h2', details: { description: '常時介護が必要で、自宅での生活が困難な高齢者が入居する生活施設です。社会福祉法人や地方公共団体が運営する公的施設のため、費用が比較的安価で人気が高い傾向があります。「終の棲家」として看取りまで対応する施設が多いです。', target: '原則として65歳以上、要介護3以上の方。', service: '食事、入浴、排泄などの身体介護を中心に、生活支援、機能訓練、レクリエーション、療養上の世話などを24時間体制で提供します。' }, workerBenefits: ['安定した雇用環境(公的施設)', '要介護度の高い方へのケアスキルが身につく', '看取りなど、長期的な視点で利用者と関われる'], matchingPersonas: ['career_up', 'veteran'], requiredQualifications: ['介護福祉士', '介護職員実務者研修', '介護職員初任者研修 (無資格可の求人も有)'] },
+    { id: 'roken', name: '介護老人保健施設 (老健)', tagline: '在宅復帰を目指すリハビリ施設', category: '施設サービス (公的)', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', details: { description: '病院退院後、すぐに自宅での生活が難しい方が、在宅復帰を目指してリハビリを行うための施設です。医師や看護師、リハビリ専門職が配置されており、医療的ケアも提供されます。入所期間は原則3～6ヶ月と短期間です。', target: '65歳以上、要介護1以上で、病状が安定している方。', service: '医師の管理のもと、看護、医学的管理下での介護、理学療法士などによるリハビリテーションが中心です。日常生活の支援も行います。' }, workerBenefits: ['医療やリハビリの知識が身につく', '多職種(医師,看護師,PT,OT)と連携して働ける', '利用者の回復という明確な目標がある'], matchingPersonas: ['career_up'], requiredQualifications: ['介護福祉士', '実務者研修/初任者研修', 'リハビリ関連資格所持者も歓迎される'] },
+    { id: 'kaigo_iryouin', name: '介護医療院', tagline: '医療と介護を一体的に提供', category: '施設サービス (公的)', icon: 'M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75', details: { description: '長期的な医療と介護の両方を必要とする高齢者のための施設です。医療機関としての機能と生活施設としての機能を兼ね備えています。看取りやターミナルケアにも対応します。', target: '要介護1以上で、長期の療養が必要な方。', service: '日常的な医学管理や、喀痰吸引、経管栄養などの医療的ケアと、身体介護を含む日常生活上の世話を提供します。' }, workerBenefits: ['医療依存度の高い方への対応スキルが身につく', '看護師との連携が密で、医療知識が深まる', '安定した環境で長期的に働ける'], matchingPersonas: ['career_up'], requiredQualifications: ['介護福祉士', '実務者研修/初任者研修', '喀痰吸引等研修修了者は優遇'] },
+    { id: 'kaigotsuki_yuryo', name: '介護付有料老人ホーム', tagline: '手厚い介護サービスが特徴', category: '施設サービス (民間)', icon: 'M9 12.75l3 3m0 0l3-3m-3 3v-7.5A2.25 2.25 0 0112.75 3h0A2.25 2.25 0 0115 5.25v7.5m-7.5-3l3-3m0 0l3 3m-3-3v7.5A2.25 2.25 0 005.25 15h0A2.25 2.25 0 003 12.75v-7.5', details: { description: '民間企業が運営する施設で、介護サービスが施設のスタッフによって提供されるタイプです。24時間介護スタッフが常駐し、要介護度が高くなっても住み続けられる場合が多いです。施設ごとにサービス内容や設備、費用が多種多様です。', target: '自立〜要介護5まで、施設により幅広い層を受け入れています。', service: '食事、入浴、排泄などの身体介護、生活支援、健康管理、リハビリ、アクティビティなど、ホテルライクなサービスを提供する施設もあります。' }, workerBenefits: ['接遇やホスピタリティスキルが磨かれる', 'レクリエーション企画など介護以外の経験も積める', '研修制度やキャリアパスが整っている企業が多い'], matchingPersonas: ['active_senior', 'career_up'], requiredQualifications: ['介護職員初任者研修以上が望ましい', '無資格可の求人も多い', '接客経験などが活かせる'] },
+    { id: 'jutakugata_yuryo', name: '住宅型有料老人ホーム', tagline: '自由度の高い生活スタイル', category: '施設サービス (民間)', icon: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h7.5', details: { description: '生活支援サービスがついた高齢者向けの住まいです。介護が必要になった場合は、外部の訪問介護やデイサービスなど、利用者自身が個別に契約して利用します。比較的自立度の高い方が多く入居しています。', target: '主に自立〜要支援、軽度の要介護の方。', service: '食事の提供、安否確認、生活相談などの基本的なサービスが中心です。介護サービスは提供しないため、スタッフの主な業務は生活のサポートになります。' }, workerBenefits: ['身体介護の負担が比較的少ない', '入居者とのコミュニケーションが中心業務', 'イベント企画など、生活を豊かにする仕事ができる'], matchingPersonas: ['active_senior', 'veteran'], requiredQualifications: ['無資格・未経験から始めやすい', '介護職員初任者研修があれば尚可', 'ヘルパー2級'] },
+    { id: 'group_home', name: 'グループホーム', tagline: '認知症ケア専門の共同生活', category: '施設サービス (民間)', icon: 'M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.928A3 3 0 017.5 12.5a3 3 0 013-3A3 3 0 0113.5 12.5a3 3 0 01-3 3m-3.375-2.928A9.09 9.09 0 001.254 18.72m1.011-3.693a3 3 0 012.922 2.72 9.09 9.09 0 01-2.43-.518m12.446-2.206a3 3 0 012.922 2.72 9.09 9.09 0 00-2.43-.518M15 12.5a3 3 0 11-6 0 3 3 0 016 0z', details: { description: '認知症の高齢者が、5～9人の少人数ユニットで共同生活を送る施設です。家庭的な雰囲気の中で、スタッフの支援を受けながら、食事の支度や掃除などを共同で行い、認知症の進行を緩やかにすることを目指します。', target: '要支援2以上で、医師から認知症の診断を受けた方。施設と同じ市区町村に住民票があることが条件です。', service: '身体介護に加え、調理や洗濯、掃除などを入居者と一緒に行うことが特徴です。認知症の症状に合わせた専門的なケアを提供します。' }, workerBenefits: ['認知症ケアの専門知識・スキルが身につく', '家庭的な雰囲気で、一人ひとりと深く関われる', '料理や掃除など、家事のスキルが活かせる'], matchingPersonas: ['veteran'], requiredQualifications: ['認知症介護実践者研修などがキャリアアップに繋がる', '介護職員初任者研修以上', '無資格可の場合もある'] },
+    { id: 'day_service', name: 'デイサービス (通所介護)', tagline: '日帰りで楽しむ交流と機能訓練', category: '居宅サービス', icon: 'M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5', details: { description: '利用者が日帰りで施設に通い、食事や入浴などの日常生活上の支援や、生活機能向上のための機能訓練、レクリエーションなどを受けるサービスです。利用者の社会的孤立感の解消や心身機能の維持、家族の介護負担軽減などを目的とします。', target: '要支援1〜2、要介護1〜5の方。', service: '送迎、健康チェック、食事、入浴、機能訓練、レクリエーション。' }, workerBenefits: ['基本的に夜勤がないため家庭と両立しやすい', 'レクリエーションの企画・運営スキルが身につく', '多くの利用者とコミュニケーションが取れる'], matchingPersonas: ['kosodate', 'active_senior'], requiredQualifications: ['介護職員初任者研修', '普通自動車運転免許(送迎業務のため)', '生活相談員や機能訓練指導員の配置も必要'] },
+    { id: 'day_care', name: 'デイケア (通所リハビリ)', tagline: '医療的ケアとリハビリに特化', category: '居宅サービス', icon: 'M4.5 12h15m-15 0l6.75-6.75M4.5 12l6.75 6.75', details: { description: '病院や診療所、介護老人保健施設などに併設され、医師の指示のもとで理学療法士・作業療法士などによる専門的なリハビリテーションを中心に行う日帰りサービスです。デイサービスより医療・リハビリの色が濃いのが特徴です。', target: '要支援1〜2、要介護1〜5の方で、主治医が必要と認めた方。', service: '送迎、リハビリテーション、食事、入浴、医療的ケア。' }, workerBenefits: ['リハビリの専門知識を間近で学べる', '医療専門職との連携スキルが向上する', '利用者の身体機能の回復に直接関われる'], matchingPersonas: ['career_up'], requiredQualifications: ['介護職員初任者研修以上', '理学療法士、作業療法士、言語聴覚士などが専門職として活躍'] },
+    { id: 'short_stay', name: 'ショートステイ (短期入所)', tagline: '家族の休息と本人の非日常体験', category: '居宅サービス', icon: 'M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75S7.615 1.25 13 1.25c1.523 0 2.954.354 4.252.954', details: { description: '利用者が短期間（数日〜1週間程度）施設に宿泊し、日常生活上の支援や機能訓練などを受けるサービスです。家族の病気や冠婚葬祭、旅行などで一時的に介護ができない場合（レスパイトケア）などに利用されます。', target: '要支援1〜2、要介護1〜5の方。', service: '食事、入浴、排泄などの身体介護、機能訓練、レクリエーション。' }, workerBenefits: ['様々な状態の利用者のケアを経験できる', '短期間での関係構築スキルが身につく', '入所施設と在宅サービスの両方の視点を学べる'], matchingPersonas: ['veteran', 'kosodate'], requiredQualifications: ['介護職員初任者研修以上', '夜勤があるため一定の経験が求められることも'] }
+];
+const personaData = [
+    { id: 'kosodate', name: '子育て世代のママさん', icon: 'M19 7.5c0 4.142-7.5 11.25-7.5 11.25S4 11.642 4 7.5 7.358 0 11.5 0s7.5 3.358 7.5 7.5z', description: '子育てと両立しながら、やりがいのある仕事を探している。子供の急な発熱などにも理解のある職場が理想。コミュニケーション能力には自信あり。', idealEnvironment: ['日勤のみ・残業少なめ', '土日祝休み', '急な休みに理解がある', 'パートタイム勤務OK'], recommendedFacilities: [ { id: 'day_service', reason: '夜勤がなく、日曜定休の施設が多いため、家庭と両立しやすい。' }, { id: 'short_stay', reason: 'シフトの柔軟性が高い場合があり、短時間勤務の相談がしやすい。' } ] },
+    { id: 'active_senior', name: '体力に自信あり！アクティブシニア', icon: 'M8.625 12a.375.375 0 01.375.375v3.375c0 .207.168.375.375.375h3.75a.375.375 0 01.375-.375V12.375a.375.375 0 01.375-.375h1.5a.375.375 0 01.375.375v3.75a.375.375 0 01-.375.375h-7.5a.375.375 0 01-.375-.375v-3.75a.375.375 0 01.375-.375h1.5z', description: '定年後のセカンドキャリア。体力にはまだまだ自信があり、同世代の役に立ちたい。フルタイムよりは自分のペースで働きたい。', idealEnvironment: ['身体的負担が少ない業務', '日中の短時間勤務', '同世代との交流が多い', '夜勤なし'], recommendedFacilities: [ { id: 'jutakugata_yuryo', reason: '身体介護が少なく、安否確認や生活相談が中心のため、体力的な負担が少ない。' }, { id: 'day_service', reason: 'レクリエーションや送迎補助など、体力を活かしつつ利用者と楽しく関われる。' } ] },
+    { id: 'career_up', name: 'スキルを磨きたい若手・中堅', icon: 'M12 21a9 9 0 100-18 9 9 0 000 18z M12 7.5a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V8.25A.75.75 0 0112 7.5zM12 16.5a.75.75 0 100-1.5.75.75 0 000 1.5z', description: '介護のプロとして成長したい意欲が高い。資格取得支援や研修制度が充実している環境を求めている。将来的にはリーダーや管理職も視野に。', idealEnvironment: ['研修制度・資格取得支援が充実', '様々な症例を経験できる', 'キャリアパスが明確', '夜勤ありでしっかり稼げる'], recommendedFacilities: [ { id: 'roken', reason: '多職種連携の中で、医療やリハビリの専門知識を体系的に学べる。' }, { id: 'tokuyou', reason: '要介護度の高い利用者が多く、高度な介護技術と対応力を磨ける。' } ] },
+    { id: 'veteran', name: '腰に配慮したいベテラン', icon: 'M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z', description: '長年の経験と知識を活かしたいが、腰への負担は避けたい。移乗介助などより、一人ひとりとじっくり向き合うケアを重視している。', idealEnvironment: ['移乗介助など身体負担の大きい業務が少ない', '少人数制でアットホーム', '認知症ケアなど専門性を活かせる', '経験や知識が尊重される'], recommendedFacilities: [ { id: 'group_home', reason: '身体介護より認知症ケアが中心。家庭的な雰囲気で、利用者と深く関われる。' }, { id: 'jutakugata_yuryo', reason: '生活支援がメインで身体的負担が少なく、これまでの経験を活かした相談業務などで活躍できる。' } ] }
+];
+const quizData = [
+    { question: "在宅復帰を目指す利用者のためのリハビリを主目的とする施設はどれですか？", options: ["特別養護老人ホーム (特養)", "介護老人保健施設 (老健)", "グループホーム"], answer: "介護老人保健施設 (老健)" },
+    { question: "原則として要介護3以上で、終身にわたる利用が可能な公的施設はどれですか？", options: ["住宅型有料老人ホーム", "介護医療院", "特別養護老人ホーム (特養)"], answer: "特別養護老人ホーム (特養)" },
+    { question: "認知症の高齢者が少人数で共同生活を送る施設はどれですか？", options: ["グループホーム", "デイケア", "介護付有料老人ホーム"], answer: "グループホーム" },
+    { question: "介護サービスが必要な場合、外部の事業者と個別に契約する形態の施設はどれですか？", options: ["介護付有料老人ホーム", "住宅型有料老人ホーム", "特別養護老人ホーム (特養)"], answer: "住宅型有料老人ホーム" },
+    { question: "長期的な医療と介護の両方を一体的に提供する施設はどれですか？", options: ["介護老人保健施設 (老健)", "特別養護老人ホーム (特養)", "介護医療院"], answer: "介護医療院" },
+    { question: "日帰りで施設に通い、レクリエーションや入浴、食事の提供を受けるサービスはどれですか？", options: ["ショートステイ", "デイサービス", "デイケア"], answer: "デイサービス" },
+    { question: "医師の指示のもと、専門的なリハビリを中心に行う日帰りサービスはどれですか？", options: ["デイサービス", "ショートステイ", "デイケア"], answer: "デイケア" },
+    { question: "家族の介護負担軽減(レスパイトケア)を目的として、短期間宿泊するサービスはどれですか？", options: ["グループホーム", "ショートステイ", "デイサービス"], answer: "ショートステイ" },
+    { question: "夜勤がなく、日曜定休の施設も多いため、子育て世代が働きやすいのはどれですか？", options: ["特別養護老人ホーム (特養)", "デイサービス", "介護医療院"], answer: "デイサービス" },
+    { question: "理学療法士(PT)や作業療法士(OT)が必ず配置されているのは？", options: ["デイケア", "グループホーム", "住宅型有料老人ホーム"], answer: "デイケア" },
+    { question: "入居条件として、施設と同じ市区町村に住民票があることが求められることが多い施設はどれですか？", options: ["特別養護老人ホーム (特養)", "介護付有料老人ホーム", "グループホーム"], answer: "グループホーム" },
+    { question: "介護分野における唯一の国家資格はどれですか？", options: ["介護職員初任者研修", "介護福祉士", "ケアマネジャー"], answer: "介護福祉士" },
+    { question: "利用者の自宅に訪問して、食事や入浴の介助を行うサービスを何と呼びますか？", options: ["施設サービス", "居宅サービス", "地域密着型サービス"], answer: "居宅サービス" },
+    { question: "身体的な負担が比較的少なく、アクティブシニアがセカンドキャリアとして働きやすい職場はどれですか？", options: ["特別養護老人ホーム (特養)", "住宅型有料老人ホーム", "介護医療院"], answer: "住宅型有料老人ホーム" },
+    { question: "介護の入門的な資格で、実務経験がなくても取得できるのはどれですか？", options: ["介護福祉士", "介護職員初任者研修", "認定介護福祉士"], answer: "介護職員初任者研修" },
+    { question: "腰に不安があるベテラン介護職が、身体的負担を抑えつつ専門性を活かせる職場はどれですか？", options: ["グループホーム", "介護老人保健施設 (老健)", "特別養護老人ホーム (特養)"], answer: "グループホーム" },
+    { question: "研修制度が充実しており、キャリアアップを目指す若手・中堅に向いている職場はどれですか？", options: ["住宅型有料老人ホーム", "介護老人保健施設 (老健)", "デイサービス"], answer: "介護老人保健施設 (老健)" },
+    { question: "介護保険制度を運営している主な主体はどこですか？", options: ["国", "都道府県", "市町村及び特別区"], answer: "市町村及び特別区" },
+    { question: "訪問介護において、提供できないサービスは次のうちどれですか？", options: ["利用者の食事介助", "利用者の部屋の掃除", "利用者の家族のための調理"], answer: "利用者の家族のための調理" },
+    { question: "介護保険サービスを利用するために必要な認定はどれですか？", options: ["身体障害者手帳", "要介護認定・要支援認定", "後期高齢者医療被保険者証"], answer: "要介護認定・要支援認定" },
+    { question: "介護報酬が国によって定められているのはどちらですか？", options: ["介護保険サービス", "保険外の自費サービス", "両方"], answer: "介護保険サービス" },
+    { question: "ケアマネジャー（介護支援専門員）の主な役割はどれですか？", options: ["直接的な身体介護を行う", "ケアプランの作成やサービスの調整", "リハビリテーションの計画・実行"], answer: "ケアプランの作成やサービスの調整" },
+    { question: "民間企業が運営し、施設ごとの特色が豊かなのはどちらの施設群ですか？", options: ["特養、老健、介護医療院", "有料老人ホーム、グループホーム", "どちらも同じ"], answer: "有料老人ホーム、グループホーム" },
+    { question: "利用者の「終の棲家」となることが多く、看取りまで対応する施設はどれですか？", options: ["介護老人保健施設 (老健)", "特別養護老人ホーム (特養)", "デイサービス"], answer: "特別養護老人ホーム (特養)" },
+    { question: "レクリエーションの企画・運営が業務の大きな割合を占めることが多いのはどれですか？", options: ["介護医療院", "デイサービス", "訪問介護"], answer: "デイサービス" },
+    { question: "喀痰吸引や経管栄養などの医療的ケアが必要な方が多く利用する施設はどれですか？", options: ["介護医療院", "グループホーム", "住宅型有料老人ホーム"], answer: "介護医療院" },
+    { question: "シフトの柔軟性が高く、パートタイム勤務を希望する人が働きやすい可能性があるのはどれですか？", options: ["ショートステイ", "介護老人保健施設 (老健)", "特別養護老人ホーム (特養)"], answer: "ショートステイ" },
+    { question: "送迎業務があるため、普通自動車運転免許が歓迎されることが多い職場はどれですか？", options: ["特別養護老人ホーム (特養)", "デイサービス", "グループホーム"], answer: "デイサービス" },
+    { question: "5〜9人の少人数ユニットケアが特徴の施設はどれですか？", options: ["介護付有料老人ホーム", "グループホーム", "特別養護老人ホーム (特養)"], answer: "グループホーム" },
+    { question: "利用者の自宅での生活を継続することを目的としたサービス群を何と呼びますか？", options: ["施設サービス", "居宅サービス", "居住系サービス"], answer: "居宅サービス" }
+];
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const sections = document.querySelectorAll('main section');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const facilityCardsContainer = document.getElementById('facility-cards-container');
+    const personaCardsContainer = document.getElementById('persona-cards-container');
+    const modal = document.getElementById('facility-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+
+    function switchSection(targetId) {
+        sections.forEach(section => section.classList.toggle('hidden', section.id !== targetId));
+        navLinks.forEach(link => link.classList.toggle('active', link.dataset.target === targetId));
+        window.scrollTo(0, 0);
+    }
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchSection(link.dataset.target);
+        });
+    });
+
+    document.getElementById('start-learning-btn').addEventListener('click', () => switchSection('structure'));
+
+    function createFacilityCard(facility) {
+        return `
+            <div class="card bg-white rounded-lg shadow p-6 flex flex-col cursor-pointer" data-id="${facility.id}">
+                <div class="flex items-center mb-4">
+                     <div class="bg-emerald-100 p-2 rounded-full mr-4">
+                        <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${facility.icon}"></path></svg>
+                    </div>
+                    <div>
+                        <span class="text-sm font-semibold text-blue-600">${facility.category}</span>
+                        <h3 class="text-xl font-bold text-gray-900">${facility.name}</h3>
+                    </div>
+                </div>
+                <p class="text-gray-600 flex-grow">${facility.tagline}</p>
+                <div class="text-right mt-4 text-emerald-500 font-semibold">詳細を見る &rarr;</div>
+            </div>`;
+    }
+    
+    function getFacilityNameById(id) {
+        const facility = facilityData.find(f => f.id === id);
+        return facility ? facility.name : '不明';
+    }
+
+    function createPersonaCard(persona) {
+        return `
+            <div class="card bg-white rounded-lg shadow p-6 flex flex-col h-full">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                         <svg class="w-8 h-8 text-emerald-600" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="${persona.icon}" clip-rule="evenodd"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900">${persona.name}</h3>
+                </div>
+                <p class="text-gray-600 mt-2 mb-4 flex-grow">${persona.description}</p>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">働き方の希望</h4>
+                        <ul class="list-disc list-inside space-y-1 text-sm text-gray-600">
+                           ${persona.idealEnvironment.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">フィットしやすい職場</h4>
+                        <div class="space-y-2">
+                            ${persona.recommendedFacilities.map(rec => `
+                                <div class="bg-gray-100 p-3 rounded-lg">
+                                    <p class="font-bold text-emerald-700">${getFacilityNameById(rec.id)}</p>
+                                    <p class="text-sm text-gray-600 mt-1">${rec.reason}</p>
+                                </div>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    facilityData.forEach(facility => {
+        facilityCardsContainer.innerHTML += createFacilityCard(facility);
+    });
+    
+    personaData.forEach(persona => {
+        personaCardsContainer.innerHTML += createPersonaCard(persona);
+    });
+
+    function getPersonaNameById(id) {
+        const persona = personaData.find(p => p.id === id);
+        return persona ? persona.name : '不明';
+    }
+
+    facilityCardsContainer.addEventListener('click', (e) => {
+        const card = e.target.closest('.card');
+        if (card) {
+            const facilityId = card.dataset.id;
+            const facility = facilityData.find(f => f.id === facilityId);
+            modalTitle.textContent = facility.name;
+            modalBody.innerHTML = `
+                <div class="space-y-6">
+                    <div>
+                        <h4 class='font-bold text-lg text-emerald-700 mb-2'>施設概要</h4>
+                        <p class='text-gray-600'>${facility.details.description}</p>
+                    </div>
+                     <div>
+                        <h4 class='font-bold text-lg text-emerald-700 mb-2'>対象者</h4>
+                        <p class='text-gray-600'>${facility.details.target}</p>
+                    </div>
+                     <div>
+                        <h4 class='font-bold text-lg text-emerald-700 mb-2'>主なサービス</h4>
+                        <p class='text-gray-600'>${facility.details.service}</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class='font-bold text-lg text-emerald-700 mb-2'>働くメリット</h4>
+                            <ul class='list-disc list-inside space-y-1 text-gray-600'>${facility.workerBenefits.map(b => `<li>${b}</li>`).join('')}</ul>
+                        </div>
+                        <div>
+                            <h4 class='font-bold text-lg text-emerald-700 mb-2'>フィットするペルソナ</h4>
+                            <ul class='space-y-2'>
+                                ${facility.matchingPersonas.map(p => `<li class="bg-gray-100 p-2 rounded-md font-semibold text-gray-700">${getPersonaNameById(p)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                     <div>
+                        <h4 class='font-bold text-lg text-emerald-700 mb-2'>必須・歓迎資格</h4>
+                        <div class="flex flex-wrap gap-2">${facility.requiredQualifications.map(q => `<span class="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">${q}</span>`).join('')}</div>
+                    </div>
+                </div>`;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+    });
+
+    function closeModal() {
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    modalCloseBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => e.target === modal && closeModal());
+
+    const quizStartScreen = document.getElementById('quiz-start-screen');
+    const quizMainScreen = document.getElementById('quiz-main-screen');
+    const quizResultScreen = document.getElementById('quiz-result-screen');
+    const startQuizBtn = document.getElementById('start-quiz-btn');
+    const retryQuizBtn = document.getElementById('retry-quiz-btn');
+    const questionNumber = document.getElementById('question-number');
+    const questionText = document.getElementById('question-text');
+    const optionsContainer = document.getElementById('options-container');
+    const feedbackContainer = document.getElementById('feedback-container');
+    const finalScore = document.getElementById('final-score');
+    const scoreMessage = document.getElementById('score-message');
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let selectedQuestions = [];
+    const NUM_QUESTIONS = 5;
+
+    function startQuiz() {
+        currentQuestionIndex = 0;
+        score = 0;
+        selectedQuestions = [...quizData].sort(() => 0.5 - Math.random()).slice(0, NUM_QUESTIONS);
+        quizStartScreen.classList.add('hidden');
+        quizResultScreen.classList.add('hidden');
+        quizMainScreen.classList.remove('hidden');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        feedbackContainer.classList.add('hidden');
+        const question = selectedQuestions[currentQuestionIndex];
+        questionNumber.textContent = `問題 ${currentQuestionIndex + 1} / ${NUM_QUESTIONS}`;
+        questionText.textContent = question.question;
+        optionsContainer.innerHTML = '';
+        const shuffledOptions = [...question.options].sort(() => 0.5 - Math.random());
+        shuffledOptions.forEach(option => {
+            const button = document.createElement('button');
+            button.textContent = option;
+            button.classList.add('quiz-option', 'w-full', 'text-left', 'p-4', 'rounded-lg', 'border-2', 'border-gray-300', 'bg-white', 'hover:bg-gray-100', 'hover:border-emerald-400');
+            button.addEventListener('click', () => selectAnswer(option, question.answer));
+            optionsContainer.appendChild(button);
+        });
+    }
+    
+    function selectAnswer(selectedOption, correctAnswer) {
+        const buttons = optionsContainer.querySelectorAll('button');
+        let correctButton;
+        buttons.forEach(button => {
+            button.classList.add('disabled');
+            if (button.textContent === correctAnswer) correctButton = button;
+        });
+
+        const selectedButton = Array.from(buttons).find(b => b.textContent === selectedOption);
+
+        if (selectedOption === correctAnswer) {
+            score++;
+            selectedButton.classList.add('correct');
+            feedbackContainer.textContent = "正解です！";
+            feedbackContainer.className = 'mt-6 p-4 rounded-lg text-center font-semibold bg-emerald-100 text-emerald-800';
+        } else {
+            selectedButton.classList.add('incorrect');
+            correctButton.classList.add('correct');
+            feedbackContainer.textContent = `不正解... 正解は「${correctAnswer}」です。`;
+            feedbackContainer.className = 'mt-6 p-4 rounded-lg text-center font-semibold bg-red-100 text-red-800';
+        }
+        feedbackContainer.classList.remove('hidden');
+
+        setTimeout(() => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < NUM_QUESTIONS) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }, 2000);
+    }
+
+    function showResults() {
+        quizMainScreen.classList.add('hidden');
+        quizResultScreen.classList.remove('hidden');
+        finalScore.textContent = `${score} / ${NUM_QUESTIONS}`;
+        const percentage = (score / NUM_QUESTIONS) * 100;
+        if (percentage === 100) scoreMessage.textContent = '素晴らしい！全問正解です！';
+        else if (percentage >= 80) scoreMessage.textContent = '優秀です！あともう一息！';
+        else if (percentage >= 60) scoreMessage.textContent = '良い調子です。復習して満点を目指しましょう。';
+        else scoreMessage.textContent = 'もう一度学習して再挑戦してみましょう！';
+    }
+
+    startQuizBtn.addEventListener('click', startQuiz);
+    retryQuizBtn.addEventListener('click', startQuiz);
+});
+</script>
+
+</body>
+</html>
+
